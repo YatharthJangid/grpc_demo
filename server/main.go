@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"log"
 	"net"
 
@@ -21,7 +22,20 @@ func main() {
 	if err != nil {
 		log.Fatalf("failed to start %v", err)
 	}
-	grpcServer := grpc.NewServer()
+	// Add a simple unary interceptor for logging
+	unaryInterceptor := func(
+		ctx context.Context,
+		req interface{},
+		info *grpc.UnaryServerInfo,
+		handler grpc.UnaryHandler,
+	) (interface{}, error) {
+		log.Printf("--> Unary Interceptor: handling request: %v", info.FullMethod)
+		return handler(ctx, req)
+	}
+
+	grpcServer := grpc.NewServer(
+		grpc.UnaryInterceptor(unaryInterceptor),
+	)
 
 	pb.RegisterGreetServiceServer(grpcServer, &helloServer{})
 
